@@ -6,6 +6,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <AssemblyName>nuext-merge</AssemblyName>
+    <Description>Merges project files into one or more text files suitable for AI analysis.</Description>
     <VersionPrefix>1.0.0</VersionPrefix>
   </PropertyGroup>
 

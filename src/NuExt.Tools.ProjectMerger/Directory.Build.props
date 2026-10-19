@@ -7,10 +7,13 @@
     <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
     <IsPackable>true</IsPackable>
     <PackageIcon>logo.png</PackageIcon>
+    <PackageId>NuExt.Tools.ProjectMerger</PackageId>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageProjectUrl>https://github.com/nu-ext/NuExt.Tools</PackageProjectUrl>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <PackageTags>nuext;tools;merge</PackageTags>
+    <PackAsTool>true</PackAsTool>
+    <ToolCommandName>nuext-merge</ToolCommandName>
   </PropertyGroup>
 
   <!-- SourceLink -->
@@ -27,10 +30,10 @@
 
   <ItemGroup>
     <None Include="../../assets/logo.png" Pack="true" PackagePath="\" />
-    <None Include="../README.md" Pack="true" PackagePath="\" />
+    <None Include="./README.md" Pack="true" PackagePath="\" />
   </ItemGroup>
 
   <!-- Imports -->
-  <Import Project="$(MSBuildThisFileDirectory)\..\..\Directory.Build.props" />
+  <Import Project="$(MSBuildThisFileDirectory)../../Directory.Build.props" />
 
 </Project>
