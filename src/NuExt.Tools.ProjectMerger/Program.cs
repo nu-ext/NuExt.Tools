@@ -48,17 +48,25 @@ internal static class Program
 
         rootCommand.SetAction(parseResult =>
         {
-            var path = parseResult.GetValue(pathArgument) ?? Environment.CurrentDirectory;
+            try
+            {
+                var path = parseResult.GetValue(pathArgument) ?? Environment.CurrentDirectory;
+                var extensionsValue = parseResult.GetValue(extensionsArgument);
 
-            var extensionsValue = parseResult.GetValue(extensionsArgument);
+                var extensions = string.IsNullOrWhiteSpace(extensionsValue)
+                    ? DefaultExtensions
+                    : extensionsValue.Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
 
-            var extensions = string.IsNullOrWhiteSpace(extensionsValue)
-                ? DefaultExtensions
-                : extensionsValue.Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+                var singleOutput = parseResult.GetValue(singleOption);
 
-            var singleOutput = parseResult.GetValue(singleOption);
-
-            ProjectMerger.Merge(path, extensions, singleOutput);
+                ProjectMerger.Merge(path, extensions, singleOutput);
+                return 0;
+            }
+            catch (Exception exception)
+            {
+                Console.Error.WriteLine(exception.Message);
+                return 1;
+            }
         });
 
         return rootCommand.Parse(args).Invoke();
