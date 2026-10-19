@@ -4,30 +4,7 @@ internal static class ProjectMerger
 {
     public static void Merge(string currentDirectory, string[] extensions, bool singleOutput)
     {
-        var currentDir = Path.GetFullPath(currentDirectory);
-
-        if (!Directory.Exists(currentDir))
-        {
-            Console.Error.WriteLine($"Directory does not exist: {currentDir}");
-            return;
-        }
-
-        var contextName = Path.GetFileName(currentDir);
-
-        if (contextName == "src")
-        {
-            contextName = Path.GetFileName(Path.GetDirectoryName(currentDir));
-        }
-        else if (contextName == "tests")
-        {
-            contextName = Path.GetFileName(Path.GetDirectoryName(currentDir)) + ".Tests";
-        }
-
-        if (!currentDir.EndsWith(Path.DirectorySeparatorChar))
-        {
-            currentDir += Path.DirectorySeparatorChar;
-        }
-
+        var (currentDir, contextName) = GetProjectContext(currentDirectory);
         Console.WriteLine($"Directory: {currentDir}, Context: {contextName}");
 
         var files = ProjectFileCollector.GetFiles(currentDir, extensions);
@@ -67,5 +44,33 @@ internal static class ProjectMerger
 
             Console.WriteLine($"written to {outputPath}");
         }
+    }
+
+    private static (string Directory, string? Name) GetProjectContext(string directory)
+    {
+        var fullPath = Path.GetFullPath(directory);
+
+        if (!Directory.Exists(fullPath))
+        {
+            throw new DirectoryNotFoundException($"Directory does not exist: {fullPath}");
+        }
+
+        var name = Path.GetFileName(fullPath);
+
+        if (name == "src")
+        {
+            name = Path.GetFileName(Path.GetDirectoryName(fullPath));
+        }
+        else if (name == "tests")
+        {
+            name = Path.GetFileName(Path.GetDirectoryName(fullPath)) + ".Tests";
+        }
+
+        if (!fullPath.EndsWith(Path.DirectorySeparatorChar))
+        {
+            fullPath += Path.DirectorySeparatorChar;
+        }
+
+        return (fullPath, name);
     }
 }
