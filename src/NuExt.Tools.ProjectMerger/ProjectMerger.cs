@@ -68,29 +68,33 @@ internal static class ProjectMerger
                 $"[{contextName} {++index:00}]" +
                 $"{(chunkName.Length > 0 ? " " + chunkName : chunkName)}-merged.txt");
 
-            using (var writer = new StreamWriter(outputPath, false, Encoding.UTF8))
-            {
-                writer.WriteLine($"// ----- Begin Project {contextName} -----");
-
-                foreach (var file in chunkFiles)
-                {
-                    var relativePath = file[currentDir.Length..];
-
-                    writer.WriteLine($"// ----- Begin file: {relativePath} -----");
-                    writer.Write(File.ReadAllText(file));
-                    writer.WriteLine();
-                    writer.WriteLine($"// ------ End file {relativePath} ------");
-                    writer.WriteLine();
-                }
-
-                writer.WriteLine($"// ------ End Project {contextName} ------");
-            }
+            WriteOutputFile(outputPath, contextName, currentDir, chunkFiles);
 
             Console.WriteLine($"{Environment.NewLine}Merged content{Environment.NewLine}" +
                               string.Join(Environment.NewLine, chunkFiles.Select(Path.GetFileName)));
 
             Console.WriteLine($"written to {outputPath}");
         }
+    }
+
+    private static void WriteOutputFile(string outputPath, string? contextName, string currentDirectory, List<string> files)
+    {
+        using var writer = new StreamWriter(outputPath, false, Encoding.UTF8);
+
+        writer.WriteLine($"// ----- Begin Project {contextName} -----");
+
+        foreach (var file in files)
+        {
+            var relativePath = file[currentDirectory.Length..];
+
+            writer.WriteLine($"// ----- Begin file: {relativePath} -----");
+            writer.Write(File.ReadAllText(file));
+            writer.WriteLine();
+            writer.WriteLine($"// ------ End file {relativePath} ------");
+            writer.WriteLine();
+        }
+
+        writer.WriteLine($"// ------ End Project {contextName} ------");
     }
 
     private static List<string> GetFiles(string currentDirectory, string[] extensions)
