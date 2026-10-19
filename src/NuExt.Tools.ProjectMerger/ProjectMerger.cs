@@ -32,7 +32,7 @@ internal static class ProjectMerger
 
         Console.WriteLine($"Directory: {currentDir}, Context: {contextName}");
 
-        var files = GetFiles(currentDir, extensions);
+        var files = ProjectFileCollector.GetFiles(currentDir, extensions);
         if (files.Count == 0)
         {
             Console.WriteLine("Nothing to merge.");
@@ -89,36 +89,5 @@ internal static class ProjectMerger
         }
 
         writer.WriteLine($"// ------ End Project {contextName} ------");
-    }
-
-    private static List<string> GetFiles(string currentDirectory, string[] extensions)
-    {
-        string[] exclude =
-        [
-            ".g.",
-            @"\.vs\",
-            @"\bin\",
-            @"\obj\",
-            @"\bin-",
-            @"\obj-",
-            @"\Dependencies",
-            @"\build\"
-        ];
-
-        var enabledExtensions = extensions
-            .Where(extension => !extension.StartsWith('-'))
-            .Distinct(StringComparer.OrdinalIgnoreCase)
-            .ToList();
-
-        var extensionOrder = enabledExtensions
-            .Select((extension, index) => new { extension, index })
-            .ToDictionary(item => item.extension, item => item.index, StringComparer.OrdinalIgnoreCase);
-
-        return Directory
-            .GetFiles(currentDirectory, "*", SearchOption.AllDirectories)
-            .Where(file => !exclude.Any(file.Contains) && enabledExtensions.Contains(Path.GetExtension(file), StringComparer.OrdinalIgnoreCase))
-            .OrderBy(file => extensionOrder[Path.GetExtension(file)])
-            .ThenBy(file => file, StringComparer.Ordinal)
-            .ToList();
     }
 }

@@ -1,8 +1,0 @@
-{
-  "profiles": {
-    "NuExt.Tools.ProjectMerger": {
-      "commandName": "Project",
-      "commandLineArgs": "\"C:\\DEV\\MyProjects\\github\\NuExt.All\\NuExt.System\" --single"
-    }
-  }
-}
