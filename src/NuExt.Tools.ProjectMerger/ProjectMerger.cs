@@ -12,18 +12,6 @@ internal static class ProjectMerger
 
     public static void Merge(string currentDirectory, string[] extensions, bool singleOutput)
     {
-        string[] exclude =
-        [
-            ".g.",
-            @"\.vs\",
-            @"\bin\",
-            @"\obj\",
-            @"\bin-",
-            @"\obj-",
-            @"\Dependencies",
-            @"\build\"
-        ];
-
         var currentDir = Path.GetFullPath(currentDirectory);
 
         if (!Directory.Exists(currentDir))
@@ -50,38 +38,22 @@ internal static class ProjectMerger
 
         Console.WriteLine($"Directory: {currentDir}, Context: {contextName}");
 
-        var enabledExts = extensions.Where(extension => !extension.StartsWith('-')).ToList();
-
-        var files = Directory
-            .GetFiles(currentDir, "*", SearchOption.AllDirectories)
-            .Where(file => !exclude.Any(file.Contains) && enabledExts.Contains(Path.GetExtension(file)))
-            .ToList();
-
+        var files = GetFiles(currentDir, extensions);
         if (files.Count == 0)
         {
             Console.WriteLine("Nothing to merge.");
             return;
         }
 
-        var extensionOrder = enabledExts
-            .Select((extension, index) => new { extension, index })
-            .ToDictionary(item => item.extension, item => item.index);
-
-        var sortedFiles = files
-            .OrderBy(file => extensionOrder[Path.GetExtension(file)])
-            .ThenBy(file => file)
-            .ToList();
-
-        var fileNames = string.Join(Environment.NewLine, sortedFiles.Select(file => file[currentDir.Length..]));
-
-        Console.WriteLine($"Files[{sortedFiles.Count}]: {fileNames}");
+        var fileNames = string.Join(Environment.NewLine, files.Select(file => file[currentDir.Length..]));
+        Console.WriteLine($"Files[{files.Count}]: {fileNames}");
 
         var outputChunks = singleOutput
             ? new Dictionary<string, List<string>>(StringComparer.Ordinal)
             {
-                [""] = sortedFiles
+                [""] = files
             }
-            : GetOutputChunks(sortedFiles)
+            : GetOutputChunks(files)
                 .OrderBy(pair => pair.Key.Length == 0 ? 1 : 0)
                 .ThenBy(pair => pair.Key, StringComparer.Ordinal)
                 .ToDictionary(pair => pair.Key, pair => pair.Value, StringComparer.Ordinal);
@@ -119,6 +91,37 @@ internal static class ProjectMerger
 
             Console.WriteLine($"written to {outputPath}");
         }
+    }
+
+    private static List<string> GetFiles(string currentDirectory, string[] extensions)
+    {
+        string[] exclude =
+        [
+            ".g.",
+            @"\.vs\",
+            @"\bin\",
+            @"\obj\",
+            @"\bin-",
+            @"\obj-",
+            @"\Dependencies",
+            @"\build\"
+        ];
+
+        var enabledExtensions = extensions
+            .Where(extension => !extension.StartsWith('-'))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        var extensionOrder = enabledExtensions
+            .Select((extension, index) => new { extension, index })
+            .ToDictionary(item => item.extension, item => item.index, StringComparer.OrdinalIgnoreCase);
+
+        return Directory
+            .GetFiles(currentDirectory, "*", SearchOption.AllDirectories)
+            .Where(file => !exclude.Any(file.Contains) && enabledExtensions.Contains(Path.GetExtension(file), StringComparer.OrdinalIgnoreCase))
+            .OrderBy(file => extensionOrder[Path.GetExtension(file)])
+            .ThenBy(file => file, StringComparer.Ordinal)
+            .ToList();
     }
 
     private static Dictionary<string, List<string>> GetOutputChunks(List<string> files)
