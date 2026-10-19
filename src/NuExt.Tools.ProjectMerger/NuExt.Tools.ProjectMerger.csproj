@@ -6,6 +6,11 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <AssemblyName>nuext-merge</AssemblyName>
+    <VersionPrefix>1.0.0</VersionPrefix>
   </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="System.CommandLine" Version="2.0.13" />
+  </ItemGroup>
 
 </Project>
