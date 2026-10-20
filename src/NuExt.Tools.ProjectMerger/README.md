@@ -28,6 +28,12 @@ Merge all files into a single output file:
 nuext-merge <path> --single
 ```
 
+Merge files by their first-level directory:
+
+```shell
+nuext-merge <path> --folder
+```
+
 Use a custom list of file extensions:
 
 ```shell
@@ -38,6 +44,7 @@ nuext-merge <path> ".cs;.xaml;.csproj"
 
 ```text
 --single    Merge all files into a single output file.
+--folder    Merge files by their first-level directory.
 --help      Show command-line help.
 ```
 

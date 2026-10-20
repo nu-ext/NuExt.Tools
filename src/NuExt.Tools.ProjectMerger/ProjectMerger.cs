@@ -2,7 +2,7 @@
 
 internal static class ProjectMerger
 {
-    public static void Merge(string currentDirectory, string[] extensions, bool singleOutput)
+    public static void Merge(string currentDirectory, string[] extensions, bool singleOutput, bool folderOutput)
     {
         var (currentDir, contextName) = GetProjectContext(currentDirectory);
         Console.WriteLine($"Directory: {currentDir}, Context: {contextName}");
@@ -17,15 +17,26 @@ internal static class ProjectMerger
         var fileNames = string.Join(Environment.NewLine, files.Select(file => file[currentDir.Length..]));
         Console.WriteLine($"Files[{files.Count}]: {fileNames}");
 
-        var outputChunks = singleOutput
-            ? new Dictionary<string, List<string>>(StringComparer.Ordinal)
+        Dictionary<string, List<string>> outputChunks;
+
+        if (singleOutput)
+        {
+            outputChunks = new Dictionary<string, List<string>>(StringComparer.Ordinal)
             {
                 [""] = files
-            }
-            : OutputChunker.GetOutputChunks(files)
+            };
+        }
+        else
+        {
+            var chunks = folderOutput
+                ? FolderOutputChunker.GetOutputChunks(currentDir, files)
+                : OutputChunker.GetOutputChunks(files);
+
+            outputChunks = chunks
                 .OrderBy(pair => pair.Key.Length == 0 ? 1 : 0)
                 .ThenBy(pair => pair.Key, StringComparer.Ordinal)
                 .ToDictionary(pair => pair.Key, pair => pair.Value, StringComparer.Ordinal);
+        }
 
         var index = 0;
         foreach (var pair in outputChunks)
@@ -51,7 +62,7 @@ internal static class ProjectMerger
 
         if (!Directory.Exists(fullPath))
         {
-            throw new DirectoryNotFoundException($"Directory does not exist: {fullPath}");
+            throw new DirectoryNotFoundException($"Directory does not exist: {directory}");
         }
 
         var name = Path.GetFileName(fullPath);
