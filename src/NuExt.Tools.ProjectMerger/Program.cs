@@ -10,6 +10,7 @@ internal static class Program
         ".vcxproj",
         ".props",
         ".targets",
+        ".xaml",
         ".cs",
         ".h",
         ".cpp",
