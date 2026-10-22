@@ -28,7 +28,7 @@ Merge all files into a single output file:
 nuext-merge <path> --single
 ```
 
-Merge files by their first-level directory:
+Merge files by their first-level directory and split named chunks larger than 128 KB into separate outputs:
 
 ```shell
 nuext-merge <path> --folder
@@ -44,7 +44,7 @@ nuext-merge <path> ".cs;.xaml;.csproj"
 
 ```text
 --single    Merge all files into a single output file.
---folder    Merge files by their first-level directory.
+--folder    Merge files by their first-level directory and split named chunks larger than 128 KB into separate outputs.
 --help      Show command-line help.
 ```
 

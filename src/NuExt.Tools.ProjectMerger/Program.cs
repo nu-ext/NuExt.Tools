@@ -43,7 +43,7 @@ internal static class Program
 
         var folderOption = new Option<bool>("--folder")
         {
-            Description = "Merge files by their first-level directory."
+            Description = "Merge files by their first-level directory and split named chunks larger than 128 KB into separate outputs."
         };
 
         var rootCommand = new RootCommand("Merges project files into text files suitable for AI analysis.");

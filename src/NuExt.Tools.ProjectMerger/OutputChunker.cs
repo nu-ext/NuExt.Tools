@@ -2,6 +2,10 @@
 
 internal static class OutputChunker
 {
+    private readonly record struct ChunkCandidate(string Name, bool RequiresExistingFile);
+
+    private sealed record FileChunkCandidates(string File, List<ChunkCandidate> Candidates);
+
     private static readonly HashSet<string> s_nativePairs =
     [
         ".cpp|.h",
@@ -11,14 +15,23 @@ internal static class OutputChunker
     public static Dictionary<string, List<string>> GetOutputChunks(List<string> files)
     {
         var fileOrder = files
-            .Select((file, index) => new { file, index })
-            .ToDictionary(item => item.file, item => item.index, StringComparer.Ordinal);
+            .Select((file, index) => new { File = file, Index = index })
+            .ToDictionary(item => item.File, item => item.Index, StringComparer.Ordinal);
 
+        var fileCandidates = files
+            .Select(file => new FileChunkCandidates(file, GetChunkCandidates(Path.GetFileNameWithoutExtension(file))))
+            .ToList();
+
+        var existingNames = files
+            .Select(static file => Path.GetFileNameWithoutExtension(file)!)
+            .ToHashSet(StringComparer.Ordinal);
+
+        var candidateCounts = GetCandidateCounts(fileCandidates);
         var chunks = new Dictionary<string, List<string>>(StringComparer.Ordinal);
 
-        foreach (var file in files)
+        foreach (var item in fileCandidates)
         {
-            var chunkName = GetInitialChunkName(file);
+            var chunkName = GetChunkName(item.Candidates, existingNames, candidateCounts);
 
             if (!chunks.TryGetValue(chunkName, out var chunkFiles))
             {
@@ -26,7 +39,7 @@ internal static class OutputChunker
                 chunks[chunkName] = chunkFiles;
             }
 
-            chunkFiles.Add(file);
+            chunkFiles.Add(item.File);
         }
 
         if (!chunks.TryGetValue("", out var commonChunkFiles))
@@ -82,27 +95,81 @@ internal static class OutputChunker
         return chunks;
     }
 
-    private static string GetInitialChunkName(string file)
+    private static Dictionary<string, int> GetCandidateCounts(List<FileChunkCandidates> fileCandidates)
     {
-        var fileName = Path.GetFileNameWithoutExtension(file);
+        var counts = new Dictionary<string, int>(StringComparer.Ordinal);
+
+        foreach (var item in fileCandidates)
+        {
+            foreach (var candidate in item.Candidates.DistinctBy(candidate => candidate.Name))
+            {
+                counts.TryGetValue(candidate.Name, out var count);
+                counts[candidate.Name] = count + 1;
+            }
+        }
+
+        return counts;
+    }
+
+    private static List<ChunkCandidate> GetChunkCandidates(string fileName)
+    {
         var parts = fileName.Split('.', StringSplitOptions.RemoveEmptyEntries);
 
         if (parts.Length == 0)
         {
-            return fileName;
+            return [new ChunkCandidate(fileName, false)];
         }
 
-        if (parts.Length == 1 && parts[0].EndsWith("Extensions", StringComparison.Ordinal))
+        var candidates = new List<ChunkCandidate>();
+        var firstPart = parts[0];
+        var baseName = GetBaseName(firstPart);
+
+        if (!string.Equals(baseName, firstPart, StringComparison.Ordinal))
         {
-            return parts[0][..^"Extensions".Length];
+            candidates.Add(new ChunkCandidate(baseName, true));
         }
 
-        if (parts.Length == 1 && parts[0].EndsWith("Factory", StringComparison.Ordinal))
+        candidates.Add(new ChunkCandidate(firstPart, false));
+
+        for (var i = 1; i < parts.Length; i++)
         {
-            return parts[0][..^"Factory".Length];
+            candidates.Add(new ChunkCandidate(string.Join('.', parts, 0, i + 1), false));
         }
 
-        return string.Join('.', parts);
+        return candidates;
+    }
+
+    private static string GetBaseName(string name)
+    {
+        if (name.EndsWith("Extensions", StringComparison.Ordinal))
+        {
+            return name[..^"Extensions".Length];
+        }
+
+        if (name.EndsWith("Factory", StringComparison.Ordinal))
+        {
+            return name[..^"Factory".Length];
+        }
+
+        return name;
+    }
+
+    private static string GetChunkName(List<ChunkCandidate> candidates, HashSet<string> existingNames, Dictionary<string, int> candidateCounts)
+    {
+        foreach (var candidate in candidates)
+        {
+            if (existingNames.Contains(candidate.Name))
+            {
+                return candidate.Name;
+            }
+
+            if (!candidate.RequiresExistingFile && candidateCounts.TryGetValue(candidate.Name, out var count) && count > 1)
+            {
+                return candidate.Name;
+            }
+        }
+
+        return candidates[^1].Name;
     }
 
     private static bool ShouldPromoteChunk(List<string> chunkFiles)
